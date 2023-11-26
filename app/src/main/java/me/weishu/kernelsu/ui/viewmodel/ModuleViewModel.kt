@@ -4,6 +4,7 @@ import android.net.Uri
 import android.os.Build
 import android.os.SystemClock
 import android.util.Log
+import android.widget.Toast
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -155,11 +156,21 @@ class ModuleViewModel : ViewModel() {
     }
 
     fun writeSP(id: String, value: Boolean) {
-       Settings.getPreferencesEditor().putBoolean(id, value).apply()
+        Settings.getPreferencesEditor().putBoolean(id, value).apply()
     }
 
     private fun readSP(id: String): Boolean {
         return Settings.getPreferences().getBoolean(id, true)
+    }
+
+    fun keyboardLight(state: Boolean): Boolean {
+        Toast.makeText(ksuApp, "keyboardLight $state", Toast.LENGTH_SHORT).show()
+        return true
+    }
+
+    fun eyeProtectionMode(state: Boolean): Boolean {
+        Toast.makeText(ksuApp, "eyeProtectionMode $state", Toast.LENGTH_SHORT).show()
+        return true
     }
 
     fun checkUpdate(m: ModuleInfo): Triple<String, String, String> {

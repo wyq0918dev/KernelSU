@@ -86,20 +86,32 @@ fun ModuleScreen(navigator: DestinationsNavigator) {
         topBar = {
             TopBar()
         },
-        floatingActionButton = if (hideInstallButton) {
-            {}
-        } else {
-            {
-                val moduleInstall = stringResource(id = R.string.module_install)
-                ExtendedFloatingActionButton(
-                    onClick = {
-                        val intent = Intent(Intent.ACTION_GET_CONTENT)
-                        intent.type = "application/zip"
-                        selectZipLauncher.launch(intent)
-                    },
-                    icon = { Icon(Icons.Filled.Add, moduleInstall) },
-                    text = { Text(text = moduleInstall) },
-                )
+        floatingActionButton = {
+            when {
+                hideInstallButton -> {}
+                else -> {
+                    val moduleInstall = stringResource(
+                        id = R.string.module_install
+                    )
+                    ExtendedFloatingActionButton(
+                        onClick = {
+                            val intent = Intent(Intent.ACTION_GET_CONTENT)
+                            intent.type = "application/zip"
+                            selectZipLauncher.launch(intent)
+                        },
+                        icon = {
+                            Icon(
+                                imageVector = Icons.Filled.Add,
+                                contentDescription = moduleInstall
+                            )
+                        },
+                        text = {
+                            Text(
+                                text = moduleInstall
+                            )
+                        },
+                    )
+                }
             }
         }
     ) { innerPadding ->
@@ -110,11 +122,15 @@ fun ModuleScreen(navigator: DestinationsNavigator) {
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(24.dp),
+                        .padding(
+                            all = 24.dp
+                        ),
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        stringResource(R.string.module_magisk_conflict),
+                        text = stringResource(
+                            id = R.string.module_magisk_conflict
+                        ),
                         textAlign = TextAlign.Center,
                     )
                 }
@@ -125,7 +141,9 @@ fun ModuleScreen(navigator: DestinationsNavigator) {
                     navigator = navigator,
                     viewModel = viewModel,
                     modifier = Modifier
-                        .padding(innerPadding)
+                        .padding(
+                            paddingValues = innerPadding
+                        )
                         .fillMaxSize(),
                     onInstallModule = {
                         navigator.navigate(InstallScreenDestination(it))
@@ -169,6 +187,13 @@ private fun ModuleList(
     val dialogHost = LocalDialogHost.current
     val snackBarHost = LocalSnackbarHost.current
     val context = LocalContext.current
+
+    val refreshState = rememberPullRefreshState(
+        refreshing = viewModel.isRefreshing,
+        onRefresh = {
+            viewModel.fetchModuleList()
+        }
+    )
 
     suspend fun onModuleUpdate(
         module: ModuleViewModel.ModuleInfo,
@@ -271,11 +296,11 @@ private fun ModuleList(
         }
     }
 
-    val refreshState = rememberPullRefreshState(refreshing = viewModel.isRefreshing,
-        onRefresh = { viewModel.fetchModuleList() })
-    Box(modifier.pullRefresh(refreshState)) {
-        val context = LocalContext.current
-
+    Box(
+        modifier = modifier.pullRefresh(
+            state = refreshState
+        )
+    ) {
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
             verticalArrangement = Arrangement.spacedBy(16.dp),
@@ -288,7 +313,6 @@ private fun ModuleList(
                 )
             },
         ) {
-
             items(items = viewModel.embeddedModuleList) { module ->
                 var isChecked by remember {
                     mutableStateOf(module.enabled)
@@ -327,24 +351,29 @@ private fun ModuleList(
                     onCheckChanged = {
                         scope.launch {
                             val success = dialogHost.withLoading {
-                                withContext(
-                                    context = Dispatchers.IO
-                                ) {
-//                                    toggleModule(
-//                                        id = module.id,
-//                                        enable = !isChecked
-//                                    )
-                                    true
+                                when (module.id) {
+                                    EmbeddedModules.KeyboardLight.id -> {
+                                        return@withLoading viewModel.keyboardLight(
+                                            state = !isChecked
+                                        )
+                                    }
+
+                                    EmbeddedModules.EyeProtectionMode.id -> {
+                                        return@withLoading viewModel.eyeProtectionMode(
+                                            state = !isChecked
+                                        )
+                                    }
+
+                                    else -> return@withLoading false
                                 }
                             }
                             if (success) {
                                 isChecked = it
-                                viewModel.writeSP(id = module.id, value = it)
-                                viewModel.fetchModuleList()
-
-                                snackBarHost.showSnackbar(
-                                    message = "已" + if (it) "启用" else "禁用"
+                                viewModel.writeSP(
+                                    id = module.id,
+                                    value = it
                                 )
+                                viewModel.fetchModuleList()
                             } else {
                                 val message = if (isChecked) failedDisable else failedEnable
                                 snackBarHost.showSnackbar(
@@ -356,7 +385,6 @@ private fun ModuleList(
                     onUpdate = {}
                 )
             }
-
             when {
                 !viewModel.isOverlayAvailable -> item {
                     WarningCard(
@@ -384,7 +412,6 @@ private fun ModuleList(
                             value = viewModel.checkUpdate(module)
                         }
                     }
-
                     ModuleItem(
                         module = module,
                         onSettings = {},
@@ -441,7 +468,6 @@ private fun ModuleList(
                             }
                         }
                     )
-
                     // fix last item shadow incomplete in LazyColumn
                     Spacer(
                         modifier = Modifier.height(
@@ -451,12 +477,10 @@ private fun ModuleList(
                 }
             }
         }
-
         DownloadListener(
             context = context,
             onDownloaded = onInstallModule
         )
-
         PullRefreshIndicator(
             refreshing = viewModel.isRefreshing,
             state = refreshState,
@@ -470,10 +494,17 @@ private fun ModuleList(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun TopBar() {
-    TopAppBar(title = { Text(stringResource(R.string.module)) })
+    TopAppBar(
+        title = {
+            Text(
+                text = stringResource(
+                    id = R.string.module
+                )
+            )
+        }
+    )
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun ModuleItem(
     module: ModuleViewModel.ModuleInfo,
@@ -486,23 +517,36 @@ private fun ModuleItem(
     onCheckChanged: (Boolean) -> Unit,
     onUpdate: (ModuleViewModel.ModuleInfo) -> Unit,
 ) {
-
     ElevatedCard(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.elevatedCardColors(containerColor = MaterialTheme.colorScheme.surface)
+        colors = CardDefaults.elevatedCardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        )
     ) {
-
         val textDecoration = if (!module.remove) null else TextDecoration.LineThrough
-
-        Column(modifier = Modifier.padding(24.dp, 16.dp, 24.dp, 0.dp)) {
+        Column(
+            modifier = Modifier.padding(
+                start = 24.dp,
+                top = 16.dp,
+                end = 24.dp,
+                bottom = 0.dp
+            )
+        ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
             ) {
-                val moduleVersion = stringResource(id = R.string.module_version)
-                val moduleAuthor = stringResource(id = R.string.module_author)
-
-                Column(modifier = Modifier.fillMaxWidth(0.8f)) {
+                val moduleVersion = stringResource(
+                    id = R.string.module_version
+                )
+                val moduleAuthor = stringResource(
+                    id = R.string.module_author
+                )
+                Column(
+                    modifier = Modifier.fillMaxWidth(
+                        fraction = 0.8f
+                    )
+                ) {
                     Text(
                         text = module.name,
                         fontSize = MaterialTheme.typography.titleMedium.fontSize,
@@ -511,7 +555,6 @@ private fun ModuleItem(
                         fontFamily = MaterialTheme.typography.titleMedium.fontFamily,
                         textDecoration = textDecoration,
                     )
-
                     Text(
                         text = "$moduleVersion: ${module.version}",
                         fontSize = MaterialTheme.typography.bodySmall.fontSize,
@@ -519,7 +562,6 @@ private fun ModuleItem(
                         fontFamily = MaterialTheme.typography.bodySmall.fontFamily,
                         textDecoration = textDecoration
                     )
-
                     Text(
                         text = "$moduleAuthor: ${module.author}",
                         fontSize = MaterialTheme.typography.bodySmall.fontSize,
@@ -528,17 +570,16 @@ private fun ModuleItem(
                         textDecoration = textDecoration
                     )
                 }
-
-                Spacer(modifier = Modifier.weight(1f))
-
+                Spacer(
+                    modifier = Modifier.weight(
+                        weight = 1f,
+                        fill = true
+                    )
+                )
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.End,
                 ) {
-                    // 内置模块的更新参数一直为否，但是否可以开关不确定，普通模块但更新参数不确定，但是开关参数一直为是
-                    // 内置 是 而且 未知
-                    // 普通 未知 而且 是
-                    // 启用
                     Switch(
                         enabled = !module.update and isSwitchable,
                         checked = isChecked,
@@ -546,9 +587,11 @@ private fun ModuleItem(
                     )
                 }
             }
-
-            Spacer(modifier = Modifier.height(12.dp))
-
+            Spacer(
+                modifier = Modifier.height(
+                    height = 12.dp
+                )
+            )
             Text(
                 text = module.description,
                 fontSize = MaterialTheme.typography.bodySmall.fontSize,
@@ -559,12 +602,14 @@ private fun ModuleItem(
                 maxLines = 4,
                 textDecoration = textDecoration
             )
-
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            Divider(thickness = Dp.Hairline)
-
+            Spacer(
+                modifier = Modifier.height(
+                    height = 16.dp
+                )
+            )
+            Divider(
+                thickness = Dp.Hairline
+            )
             Row(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
@@ -579,26 +624,41 @@ private fun ModuleItem(
                     maxLines = 4,
                     textDecoration = textDecoration
                 )
-
-                Spacer(modifier = Modifier.weight(1f, true))
-
+                Spacer(
+                    modifier = Modifier.weight(
+                        weight = 1f,
+                        fill = true
+                    )
+                )
                 if (updateUrl.isNotEmpty()) {
                     Button(
                         modifier = Modifier
-                            .padding(0.dp)
-                            .defaultMinSize(52.dp, 32.dp),
-                        onClick = { onUpdate(module) },
-                        shape = RoundedCornerShape(6.dp),
-                        contentPadding = PaddingValues(0.dp)
+                            .padding(
+                                all = 0.dp
+                            )
+                            .defaultMinSize(
+                                minWidth = 52.dp,
+                                minHeight = 32.dp
+                            ),
+                        onClick = {
+                            onUpdate(module)
+                        },
+                        shape = RoundedCornerShape(
+                            size = 6.dp
+                        ),
+                        contentPadding = PaddingValues(
+                            all = 0.dp
+                        )
                     ) {
                         Text(
                             fontFamily = MaterialTheme.typography.labelMedium.fontFamily,
                             fontSize = MaterialTheme.typography.labelMedium.fontSize,
-                            text = stringResource(R.string.module_update),
+                            text = stringResource(
+                                id = R.string.module_update
+                            ),
                         )
                     }
                 }
-
                 TextButton(
                     enabled = isEmbedded,
                     onClick = onSettings,
@@ -606,19 +666,23 @@ private fun ModuleItem(
                     Text(
                         fontFamily = MaterialTheme.typography.labelMedium.fontFamily,
                         fontSize = MaterialTheme.typography.labelMedium.fontSize,
-                        text = stringResource(id = R.string.settings)
+                        text = stringResource(
+                            id = R.string.settings
+                        )
                     )
                 }
-
-
                 TextButton(
                     enabled = !module.remove and !isEmbedded,
-                    onClick = { onUninstall(module) },
+                    onClick = {
+                        onUninstall(module)
+                    },
                 ) {
                     Text(
                         fontFamily = MaterialTheme.typography.labelMedium.fontFamily,
                         fontSize = MaterialTheme.typography.labelMedium.fontSize,
-                        text = stringResource(R.string.uninstall),
+                        text = stringResource(
+                            id = R.string.uninstall
+                        ),
                     )
                 }
             }
@@ -629,18 +693,27 @@ private fun ModuleItem(
 @Preview
 @Composable
 fun ModuleItemPreview() {
-    val module = ModuleViewModel.ModuleInfo(
-        id = "id",
-        name = "name",
-        version = "version",
-        versionCode = 1,
-        author = "author",
-        description = "I am a test module and i do nothing but show a very long description",
-        switchable = true,
-        enabled = true,
-        update = true,
-        remove = true,
-        updateJson = ""
+    ModuleItem(
+        module = ModuleViewModel.ModuleInfo(
+            id = "id",
+            name = "name",
+            version = "version",
+            versionCode = 1,
+            author = "author",
+            description = "I am a test module and i do nothing but show a very long description",
+            switchable = true,
+            enabled = true,
+            update = false,
+            remove = false,
+            updateJson = ""
+        ),
+        onSettings = {},
+        isEmbedded = false,
+        isSwitchable = true,
+        isChecked = true,
+        updateUrl = "",
+        onUninstall = {},
+        onCheckChanged = {},
+        onUpdate = {}
     )
-    ModuleItem(module, {}, false, true, true, "", {}, {}, {})
 }
