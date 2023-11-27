@@ -4,8 +4,8 @@ import android.os.Bundle
 import android.view.Gravity
 import android.view.View
 import android.widget.TextView
-import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Icon
@@ -36,7 +36,7 @@ import me.weishu.kernelsu.ui.theme.KernelSUTheme
 import me.weishu.kernelsu.ui.util.LocalDialogHost
 import me.weishu.kernelsu.ui.util.LocalSnackbarHost
 
-class MainActivity : ComponentActivity(), DashboardEntry {
+class MainActivity : AppCompatActivity(), DashboardEntry {
 
     @OptIn(ExperimentalAnimationApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -45,7 +45,7 @@ class MainActivity : ComponentActivity(), DashboardEntry {
         setContent {
             KernelSUTheme {
                 val navController = rememberAnimatedNavController()
-                val snackbarHostState = remember {
+                val snackBarHostState = remember {
                     SnackbarHostState()
                 }
                 Scaffold(
@@ -53,11 +53,11 @@ class MainActivity : ComponentActivity(), DashboardEntry {
                         BottomBar(navController)
                     },
                     snackbarHost = {
-                        SnackbarHost(snackbarHostState)
+                        SnackbarHost(snackBarHostState)
                     }
                 ) { innerPadding ->
                     CompositionLocalProvider(
-                        LocalSnackbarHost provides snackbarHostState,
+                        LocalSnackbarHost provides snackBarHostState,
                         LocalDialogHost provides rememberDialogHostState(),
                     ) {
                         DestinationsNavHost(
@@ -68,6 +68,13 @@ class MainActivity : ComponentActivity(), DashboardEntry {
                     }
                 }
             }
+        }
+    }
+
+    override fun getDashboardView(): View {
+        return TextView(this).apply {
+            text = "hello world"
+            gravity = Gravity.CENTER
         }
     }
 
@@ -105,13 +112,6 @@ class MainActivity : ComponentActivity(), DashboardEntry {
                     alwaysShowLabel = false
                 )
             }
-        }
-    }
-
-    override fun getDashboardView(): View {
-        return TextView(this).apply {
-            text = "hello world"
-            gravity = Gravity.CENTER
         }
     }
 }

@@ -4,22 +4,26 @@ plugins {
     alias(libs.plugins.agp.app)
     alias(libs.plugins.kotlin)
     alias(libs.plugins.ksp)
-    alias(libs.plugins.lsplugin.apksign)
+//    alias(libs.plugins.lsplugin.apksign)
     id("kotlin-parcelize")
 }
 
 //val managerVersionCode: Int by rootProject.extra
 //val managerVersionName: String by rootProject.extra
 
-apksign {
-    storeFileProperty = "KEYSTORE_FILE"
-    storePasswordProperty = "KEYSTORE_PASSWORD"
-    keyAliasProperty = "KEY_ALIAS"
-    keyPasswordProperty = "KEY_PASSWORD"
-}
+//apksign {
+//    storeFileProperty = "KEYSTORE_FILE"
+//    storePasswordProperty = "KEYSTORE_PASSWORD"
+//    keyAliasProperty = "KEY_ALIAS"
+//    keyPasswordProperty = "KEY_PASSWORD"
+//}
 
 android {
     namespace = "me.weishu.kernelsu"
+
+    defaultConfig {
+        applicationId = "com.wyq0918dev.kernelsu"
+    }
 
     buildTypes {
         release {
@@ -74,6 +78,11 @@ android {
 }
 
 dependencies {
+
+    implementation("androidx.core:core-ktx:1.12.0")
+    implementation("androidx.appcompat:appcompat:1.6.1")
+    implementation("com.google.android.material:material:1.10.0")
+    
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.navigation.compose)
 
